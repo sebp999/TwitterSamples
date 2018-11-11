@@ -1,26 +1,23 @@
 package uk.co.sebswebs.fractal.test;
 
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
 import org.junit.Test;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.Mockito;
 
 import uk.co.sebswebs.fractal.Log;
 import uk.co.sebswebs.fractal.Tweet;
 import uk.co.sebswebs.fractal.TweetReaderThread;
 import uk.co.sebswebs.fractal.TwitterScanner;
+import uk.co.sebswebs.fractal.TwitterStatusQueue;
 
 public class TwitterScannerTest {
 	private String getMockTimestamp (String time) {
@@ -30,7 +27,7 @@ public class TwitterScannerTest {
 	@Test
 	public void testHourChangeCausesOutput() {
 		
-		LinkedList<Tweet> mockQueue = Mockito.mock(LinkedList.class);
+		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
 		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
 
@@ -54,7 +51,7 @@ public class TwitterScannerTest {
 	@Test
 	public void testSeveralHours() {
 		
-		LinkedList<Tweet> mockQueue = Mockito.mock(LinkedList.class);
+		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
 		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
 
@@ -87,7 +84,7 @@ public class TwitterScannerTest {
 	@Test
 	public void test2MentionsIn1TweetCountsAs2() {
 		
-		LinkedList<Tweet> mockQueue = Mockito.mock(LinkedList.class);
+		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
 		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
 		
@@ -107,7 +104,7 @@ public class TwitterScannerTest {
 	@Test
 	public void testHourChangeAtMidnight() {
 		
-		LinkedList<Tweet> mockQueue = Mockito.mock(LinkedList.class);
+		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
 		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
 
@@ -131,7 +128,7 @@ public class TwitterScannerTest {
 	@Test
 	public void testCaseInsensitive() {
 		
-		LinkedList<Tweet> mockQueue = Mockito.mock(LinkedList.class);
+		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
 		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
 		

@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
+import uk.co.sebswebs.fractal.Tweet;
 import uk.co.sebswebs.fractal.TwitterScanner.TSValue;
 import uk.co.sebswebs.fractal.TwitterStatusQueue;
 
@@ -38,9 +39,9 @@ public class TwitterStatusQueueTest {
 	@Test
 	public void testUnpackBadlyFormedJSONDoesntAddToQueue() throws IOException {
 		TwitterStatusQueue aQueue = new TwitterStatusQueue();
-		aQueue.addMessage(getText("singe_tweet.json"));
+		aQueue.add(getText("singe_tweet.json"));
 		try {
-			TSValue singleTweet = aQueue.getOneStatus();
+			Tweet singleTweet = aQueue.poll();
 			fail("Should have thrown NoSuchElementException because nothing in queue");
 		} catch (NoSuchElementException passes) {
 			//Test passes

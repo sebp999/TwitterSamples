@@ -1,74 +1,30 @@
 package uk.co.sebswebs.fractal;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Queue;
 
-import org.apache.commons.codec.binary.Base64;
+/**
+ * A thread that will read tweets from the ​“GET statuses/sample” API and put them in a queue.
+ * @author <a href="mailto:sebpalmer@gmx.com">Seb Palmer</a>
+ */
 
 public class TweetReaderThread extends Thread {
 	InputStream myInputStream = null;
 	HttpURLConnection myConnection = null;
 	Queue<Tweet> myQueue = null;
 	
-//	@Override
-//	public void run() {
-//		super.run();
-//		String username = "YOUR_USERNAME_HERE";
-//		String password = "YOUR_PASSWORD_HERE";
-//		String streamURL = "YOUR_STREAM_URL_HERE";
-//		String charset = "UTF-8";
-//
-//		HttpURLConnection connection = null;
-//		InputStream inputStream = null;
-//
-//		try {
-//			connection = getConnection(streamURL, username, password);
-//
-//			inputStream = connection.getInputStream();
-//			int responseCode = connection.getResponseCode();
-//
-//			if (responseCode >= 200 && responseCode <= 299) {
-//
-//				BufferedReader reader = new BufferedReader(
-//						new InputStreamReader(new StreamingGZIPInputStream(inputStream), charset));
-//				String line = reader.readLine();
-//
-//				while (line != null) {
-//					System.out.println(line);
-//					line = reader.readLine();
-//				}
-//			} else {
-//				handleNonSuccessResponse(connection);
-//			}
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			if (connection != null) {
-//				try {
-//					handleNonSuccessResponse(connection);
-//				} catch (IOException cantGetResponseCode) {
-//					System.out.println("Non success reponse but can't access the response code/message");
-//				}
-//			}
-//		} finally {
-//			if (inputStream != null) {
-//				try {
-//					myInputStream.close();
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-//			}
-//		}
-//	}
+    /**
+     * Start the thread: open connection to Twitter endpoint, reads tweets, and puts them in the queue provided.
+     */
+	public void run() {
+		//NOT IMPLEMENTED YET
+	}
 
 	private static void handleNonSuccessResponse(HttpURLConnection connection) throws IOException {
 		int responseCode = connection.getResponseCode();
@@ -101,8 +57,6 @@ public class TweetReaderThread extends Thread {
 	}
 
 	public boolean reconnect() {
-		// TODO Auto-generated method stub
-		// 
 		return false;
 	}
 }

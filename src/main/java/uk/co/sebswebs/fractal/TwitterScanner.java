@@ -7,6 +7,19 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import com.twitter.hbc.ClientBuilder;
+import com.twitter.hbc.core.Client;
+import com.twitter.hbc.core.Constants;
+import com.twitter.hbc.core.Hosts;
+import com.twitter.hbc.core.HttpHosts;
+import com.twitter.hbc.core.endpoint.StatusesSampleEndpoint;
+import com.twitter.hbc.core.event.Event;
+import com.twitter.hbc.core.processor.StringDelimitedProcessor;
+import com.twitter.hbc.httpclient.auth.Authentication;
+import com.twitter.hbc.httpclient.auth.OAuth1;
 
 /**
  * Entry point for this project.  Reads in tweets using “GET statuses/sample” API {@link https://developer.twitter.com/en/docs/tweets/sample-realtime/overview/GET_statuse_sample}
@@ -59,11 +72,10 @@ public class TwitterScanner {
 	*
 	*/
 	
-	public void run() {
-		run(new TweetReaderThread(), new LinkedList(), new ConsoleLog(), LocalDateTime.now().getHour());
+	public void run() throws InterruptedException {
+		run(new ConsoleLog(), LocalDateTime.now().getHour(), new StringToTweetParser(), new LinkedBlockingQueue<String>(100000));
 	// Begin aggregating mentions. Every hour, "store" the relative change
 	// (e.g. write it to System.out).
-
 	}
 	
 	/**
@@ -71,51 +83,52 @@ public class TwitterScanner {
 	* of the aggregate number of tweets on the previous period.
 	*/
 	
-	public void run(TweetReaderThread aThread, Queue<Tweet> aQueue, Log aLog, int currentHour) {
+	public void run(Log aLog, int currentHour, StringToTweetParser aStringToTweet, BlockingQueue<String> msgQueue) throws InterruptedException {
+		
+		BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
+		Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
+		StatusesSampleEndpoint hosebirdEndpoint = new StatusesSampleEndpoint();
+
+		Authentication hosebirdAuth = new OAuth1("consumerKey", "consumerSecret", "token", "secret");
+		
+		ClientBuilder builder = new ClientBuilder()
+				  .name("Hosebird-Client-01")                              // optional: mainly for the logs
+				  .hosts(hosebirdHosts)
+				  .authentication(hosebirdAuth)
+				  .endpoint(hosebirdEndpoint)
+				  .processor(new StringDelimitedProcessor(msgQueue))
+				  .eventMessageQueue(eventQueue);                          // optional: use this if you want to process client events
+
+		Client hosebirdClient = builder.build();
+		// Attempts to establish a connection.
+		hosebirdClient.connect();
+
 		myCurrentHour = currentHour;
 		long tweetsLastHour = 0;
 		long tweetsThisHour = 0;
 		
-		// A separate thread reads the tweets
-		// Set up a queue that we can read them from
-		// Pass the queue to the thread so that it can fill it up.
-		
-		aThread.setQueue(aQueue);
-		aThread.start();
-		
 		Tweet currentTweet = null;
-		
-		while(true) {
-			try {
-				currentTweet = aQueue.poll();
-				int mentions = currentTweet.mentions(mySearchTerm);
-
-				if (mentions>0) {
-					if (tweetIsThisHour(currentTweet)) {
-						tweetsThisHour += mentions;
-					} else {
-						// If the hour is not the "current hour" then an hour has passed.
-						// Roll the current_hour forward and report
-
-						report (tweetsThisHour, tweetsLastHour, currentTweet.getTimestamp(), aLog);
-						tweetsLastHour=tweetsThisHour; 
-						tweetsThisHour=0;
-						tweetsThisHour += mentions;
-						incrementHour();
-					}
-				}
-			} catch (NoSuchElementException queueEmpty) {
-				
-				//This will probably end up being handled by the reading thread 
-				//in which case empty queue means end of program.
-				
-				boolean successfulReconnect = aThread.reconnect();
-				if (!successfulReconnect) {
+		while(!msgQueue.isEmpty()) {
+			String aTweet = msgQueue.take();
+			currentTweet = aStringToTweet.convert(aTweet);
+			int mentions = currentTweet.mentions(mySearchTerm);
+	
+			if (mentions>0) {
+				if (tweetIsThisHour(currentTweet)) {
+					tweetsThisHour += mentions;
+				} else {
+					// If the hour is not the "current hour" then an hour has passed.
+					// Roll the current_hour forward and report
+	
 					report (tweetsThisHour, tweetsLastHour, currentTweet.getTimestamp(), aLog);
-					break;
+					tweetsLastHour=tweetsThisHour; 
+					tweetsThisHour=0;
+					tweetsThisHour += mentions;
+					incrementHour();
 				}
 			}
-		}
+		} 
+		report (tweetsThisHour, tweetsLastHour, currentTweet.getTimestamp(), aLog);
 	}
 	
 	private void incrementHour() {
@@ -135,6 +148,7 @@ public class TwitterScanner {
 		}
 		storeValue(new TSValue(timestamp, numberForThisHour));
 	}
+	
 	/**
 	* Returns whether tweet is in the current hour.
 	*

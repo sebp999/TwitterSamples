@@ -7,17 +7,15 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.NoSuchElementException;
-import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import uk.co.sebswebs.fractal.Log;
+import uk.co.sebswebs.fractal.StringToTweetParser;
 import uk.co.sebswebs.fractal.Tweet;
-import uk.co.sebswebs.fractal.TweetReaderThread;
 import uk.co.sebswebs.fractal.TwitterScanner;
-import uk.co.sebswebs.fractal.TwitterStatusQueue;
 
 public class TwitterScannerTest {
 	private String getMockTimestamp (String time) {
@@ -25,122 +23,112 @@ public class TwitterScannerTest {
 	}
 
 	@Test
-	public void testHourChangeCausesOutput() {
+	public void testHourChangeCausesOutput() throws InterruptedException {
 		
-		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
-		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
-
+		StringToTweetParser mockParser = Mockito.mock(StringToTweetParser.class);
+		LinkedBlockingQueue<String> mockQueue = Mockito.mock(LinkedBlockingQueue.class);
+		
 		Tweet firstTweet = new Tweet("facebook tweet1", getMockTimestamp("21:30:00"));
 		Tweet secondTweet = new Tweet("facebook tweet2", getMockTimestamp("22:00:00"));
 		
-		when(mockQueue.poll()).thenReturn(firstTweet).thenReturn(secondTweet).thenThrow(new NoSuchElementException());
+		when(mockQueue.take()).thenReturn("").thenReturn("");
+		when(mockParser.convert(Mockito.anyString())).thenReturn(firstTweet).thenReturn(secondTweet);
+		when(mockQueue.isEmpty()).thenReturn(false).thenReturn(false).thenReturn(true);
 		
-		when(mockReaderThread.reconnect()).thenReturn(false); //enables the run method to end
-		
-		new TwitterScanner("facebook").run(mockReaderThread, mockQueue, mockLog, 21);
-		
-		verify(mockQueue, times(3)).poll(); //2 tweets and an exception
-		verify(mockReaderThread ,times(1)).start();
+		new TwitterScanner("facebook").run(mockLog, 21, mockParser, mockQueue);
 		
 		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockReaderThread ,times(1)).reconnect();
 		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 1", 0l, 1l);
 	}
 	
 	@Test
-	public void testSeveralHours() {
+	public void testSeveralHours() throws InterruptedException{
 		
-		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
-		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
+		StringToTweetParser mockParser = Mockito.mock(StringToTweetParser.class);
+		LinkedBlockingQueue<String> mockQueue = Mockito.mock(LinkedBlockingQueue.class);
 
 		Tweet tweet1 = new Tweet("facebook tweet1", getMockTimestamp("21:30:00"));
 		Tweet tweet2 = new Tweet("facebook tweet2", getMockTimestamp("21:30:00"));
+		
 		Tweet tweet3 = new Tweet("facebook tweet3", getMockTimestamp("22:10:00"));
 		Tweet tweet4 = new Tweet("facebook tweet3", getMockTimestamp("22:10:00"));
 		Tweet tweet5 = new Tweet("facebook tweet3", getMockTimestamp("22:10:00"));
 		Tweet tweet6 = new Tweet("facebook tweet3", getMockTimestamp("22:10:00"));
+		
 		Tweet tweet7 = new Tweet("facebook tweet3", getMockTimestamp("23:10:00"));
 		Tweet tweet8 = new Tweet("facebook tweet3", getMockTimestamp("23:10:00"));
 		
-		when(mockQueue.poll()).thenReturn(tweet1).thenReturn(tweet2).thenReturn(tweet3).thenReturn(tweet4).thenReturn(tweet5).thenReturn(tweet6).thenReturn(tweet7).thenReturn(tweet8).thenThrow(new NoSuchElementException());
-		
-		when(mockReaderThread.reconnect()).thenReturn(false); //enables the run method to end
+		when(mockQueue.take()).thenReturn("");
+		when(mockParser.convert(Mockito.anyString())).thenReturn(tweet1).thenReturn(tweet2).thenReturn(tweet3).thenReturn(tweet4).thenReturn(tweet5).thenReturn(tweet6).thenReturn(tweet7).thenReturn(tweet8);
+		when(mockQueue.isEmpty()).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(false).thenReturn(true);
 		
 		TwitterScanner s = new TwitterScanner("facebook");
-		s.run(mockReaderThread, mockQueue, mockLog, 21);
-		
-		verify(mockQueue, times(9)).poll(); //2 tweets and an exception
-		verify(mockReaderThread ,times(1)).start();
+		s.run(mockLog, 21, mockParser, mockQueue);
 		
 		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockReaderThread ,times(1)).reconnect();
 		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
 		verify(mockLog, times(1)).log("Change in mentions between 22:00 and 23:00 compared to previous hour is +100.0 %", 2l, 4l);
 		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 compared to previous hour is -50.0 %", 4l, 2l);
 	}
 	
 	@Test
-	public void test2MentionsIn1TweetCountsAs2() {
+	public void test2MentionsIn1TweetCountsAs2() throws InterruptedException {
 		
-		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
-		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
+		StringToTweetParser mockParser = Mockito.mock(StringToTweetParser.class);
+		LinkedBlockingQueue<String> mockQueue = Mockito.mock(LinkedBlockingQueue.class);
 		
 		Tweet firstTweet = new Tweet("facebook tweet1 facebook", getMockTimestamp("21:30:00"));
 		
-		when(mockQueue.poll()).thenReturn(firstTweet).thenThrow(new NoSuchElementException());
-		when(mockReaderThread.reconnect()).thenReturn(false);
-		
-		new TwitterScanner("facebook").run(mockReaderThread, mockQueue, mockLog, 21);
+		when(mockQueue.take()).thenReturn("");
+		when(mockParser.convert(Mockito.anyString())).thenReturn(firstTweet);
+		when(mockQueue.isEmpty()).thenReturn(false).thenReturn(true);
+	
+		TwitterScanner s = new TwitterScanner("facebook");
+		s.run(mockLog, 21, mockParser, mockQueue);
 		
 		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
 		
-		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockReaderThread ,times(1)).reconnect();
 	}
 	
 	@Test
-	public void testHourChangeAtMidnight() {
+	public void testHourChangeAtMidnight() throws InterruptedException {
 		
-		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
-		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
+		StringToTweetParser mockParser = Mockito.mock(StringToTweetParser.class);
+		LinkedBlockingQueue<String> mockQueue = Mockito.mock(LinkedBlockingQueue.class);		
 
 		Tweet firstTweet = new Tweet("facebook tweet1", getMockTimestamp("23:30:00"));
 		Tweet secondTweet = new Tweet("facebook tweet2", getMockTimestamp("00:00:00"));
 		
-		when(mockQueue.poll()).thenReturn(firstTweet).thenReturn(secondTweet).thenThrow(new NoSuchElementException());
+		when(mockQueue.take()).thenReturn("").thenReturn("");
+		when(mockParser.convert(Mockito.anyString())).thenReturn(firstTweet).thenReturn(secondTweet);
+		when(mockQueue.isEmpty()).thenReturn(false).thenReturn(false).thenReturn(true);
 		
-		when(mockReaderThread.reconnect()).thenReturn(false); //enables the run method to end
+		TwitterScanner s = new TwitterScanner("facebook");
+		s.run(mockLog, 23, mockParser, mockQueue);
 		
-		new TwitterScanner("facebook").run(mockReaderThread, mockQueue, mockLog, 23);
-		
-		verify(mockQueue, times(3)).poll(); //2 tweets and an exception
-		verify(mockReaderThread ,times(1)).start();
-		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 zero to 1", 0l, 1l); //The tweet at 23:30
-
-		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockReaderThread ,times(1)).reconnect();
+		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 zero to 1", 0l, 1l);
 	}
 	
 	@Test
-	public void testCaseInsensitive() {
+	public void testCaseInsensitive() throws InterruptedException {
 		
-		Queue<Tweet> mockQueue = Mockito.mock(TwitterStatusQueue.class);
-		TweetReaderThread mockReaderThread = Mockito.mock(TweetReaderThread.class);
 		Log mockLog = Mockito.mock(Log.class);
+		StringToTweetParser mockParser = Mockito.mock(StringToTweetParser.class);
+		LinkedBlockingQueue<String> mockQueue = Mockito.mock(LinkedBlockingQueue.class);	
 		
 		Tweet firstTweet = new Tweet("Facebook tweet1", getMockTimestamp("21:30:00"));
 		Tweet secondTweet = new Tweet("FACEBOOK tweet2", getMockTimestamp("21:30:00"));
 		
-		when(mockQueue.poll()).thenReturn(firstTweet).thenReturn(secondTweet).thenThrow(new NoSuchElementException());
-		when(mockReaderThread.reconnect()).thenReturn(false);
+		when(mockQueue.take()).thenReturn("").thenReturn("");
+		when(mockParser.convert(Mockito.anyString())).thenReturn(firstTweet).thenReturn(secondTweet);
+		when(mockQueue.isEmpty()).thenReturn(false).thenReturn(false).thenReturn(true);
 		
-		new TwitterScanner("facebook").run(mockReaderThread, mockQueue, mockLog, 21);
+		new TwitterScanner("facebook").run(mockLog, 21, mockParser, mockQueue);
 		
 		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
 	}
-	
 }

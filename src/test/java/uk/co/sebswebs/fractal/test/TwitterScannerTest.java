@@ -40,6 +40,8 @@ public class TwitterScannerTest {
 		
 		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
 		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 1");
+		verify(mockParser, times(2)).convert(Mockito.anyString());
+		verify(mockQueue, times(3)).isEmpty();
 	}
 	
 	@Test

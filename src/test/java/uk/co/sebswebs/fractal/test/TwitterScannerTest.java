@@ -39,7 +39,7 @@ public class TwitterScannerTest {
 		new TwitterScanner("facebook").run(mockLog, 21, mockParser, mockQueue);
 		
 		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 1", 0l, 1l);
+		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 1");
 	}
 	
 	@Test
@@ -68,9 +68,9 @@ public class TwitterScannerTest {
 		s.run(mockLog, 21, mockParser, mockQueue);
 		
 		//The queue will be empty on the 3rd call, so the TwitterScanner will tell the reader to reconnect to Twitter
-		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
-		verify(mockLog, times(1)).log("Change in mentions between 22:00 and 23:00 compared to previous hour is +100.0 %", 2l, 4l);
-		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 compared to previous hour is -50.0 %", 4l, 2l);
+		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2");
+		verify(mockLog, times(1)).log("Change in mentions between 22:00 and 23:00 compared to previous hour is +100.0 %");
+		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 compared to previous hour is -50.0 %");
 	}
 	
 	@Test
@@ -89,7 +89,7 @@ public class TwitterScannerTest {
 		TwitterScanner s = new TwitterScanner("facebook");
 		s.run(mockLog, 21, mockParser, mockQueue);
 		
-		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
+		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2");
 		
 	}
 	
@@ -110,7 +110,7 @@ public class TwitterScannerTest {
 		TwitterScanner s = new TwitterScanner("facebook");
 		s.run(mockLog, 23, mockParser, mockQueue);
 		
-		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 zero to 1", 0l, 1l);
+		verify(mockLog, times(1)).log("Change in mentions between 23:00 and 0:00 zero to 1");
 	}
 	
 	@Test
@@ -129,6 +129,6 @@ public class TwitterScannerTest {
 		
 		new TwitterScanner("facebook").run(mockLog, 21, mockParser, mockQueue);
 		
-		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2", 0l, 2l);
+		verify(mockLog, times(1)).log("Change in mentions between 21:00 and 22:00 zero to 2");
 	}
 }

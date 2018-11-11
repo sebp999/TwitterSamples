@@ -140,11 +140,11 @@ public class TwitterScanner {
 		double change = 0d;
 		if (numberForLastHour == 0) {
 			//Percentage is based on zero so you can't report a percentage
-			aLog.log("Change in mentions between "+myCurrentHour+":00 and "+(myCurrentHour==23 ? 0:myCurrentHour+1)+ ":00 zero to "+numberForThisHour, numberForLastHour, numberForThisHour);
+			aLog.log("Change in mentions between "+myCurrentHour+":00 and "+(myCurrentHour==23 ? 0:myCurrentHour+1)+ ":00 zero to "+numberForThisHour);
 		} else {
 			//Percentage increase or decrease based on previous period
 			change = (double)(numberForThisHour-numberForLastHour)/(double)numberForLastHour;
-			aLog.log("Change in mentions between "+myCurrentHour+":00 and "+(myCurrentHour==23 ? 0:myCurrentHour+1)+ ":00 compared to previous hour is "+(change>=0?"+":"")+(change*100)+" %",numberForLastHour, numberForThisHour);
+			aLog.log("Change in mentions between "+myCurrentHour+":00 and "+(myCurrentHour==23 ? 0:myCurrentHour+1)+ ":00 compared to previous hour is "+(change>=0?"+":"")+(change*100)+" %");
 		}
 		storeValue(new TSValue(timestamp, numberForThisHour));
 	}
@@ -154,6 +154,7 @@ public class TwitterScanner {
 	*
 	* @return true if the tweet is in the current hour.
 	*/
+	
 	private boolean tweetIsThisHour(Tweet aTweet) {
 		Instant timestamp = aTweet.getTimestamp();
 		int hour = LocalDateTime.ofInstant(timestamp, ZoneId.of("UTC")).getHour();
@@ -166,8 +167,12 @@ public class TwitterScanner {
 	
 	public static void main(String ... args) {
 
-		
-//		TwitterScanner scanner = new TwitterScanner("Facebook");
-//		scanner.run();
+		Log myLog = new ConsoleLog();
+		TwitterScanner scanner = new TwitterScanner("Facebook");
+		try {
+			scanner.run();
+		} catch (InterruptedException interrupted) {
+			myLog.log(interrupted.toString());
+		}
 	}
 }

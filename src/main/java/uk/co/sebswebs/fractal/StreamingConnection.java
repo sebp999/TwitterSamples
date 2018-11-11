@@ -1,4 +1,4 @@
-package uk.co.sebswebs;
+package uk.co.sebswebs.fractal;
 
 import java.io.*;
 import java.lang.String;

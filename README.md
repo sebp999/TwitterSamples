@@ -1,5 +1,5 @@
 # TwitterSamples
-A java project (work in progress) that connects to the Twitter's [Streaming API] (https://developer.twitter.com/en/docs/tutorials/consuming-streaming-data) and aggregates counts of statuses that contain a given search term.  Aggregate totals are logged hourly.
+A java project (work in progress) that connects to the “GET statuses/sample” API in Twitter's [Streaming API] (https://developer.twitter.com/en/docs/tutorials/consuming-streaming-data) and aggregates counts of statuses that contain a given search term.  Aggregate totals are logged hourly.
 
 
 ## Features
